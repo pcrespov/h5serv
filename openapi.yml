@@ -34,7 +34,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schema/Domain'
+                $ref: '#/components/schemas/Domain'
         '409':
           description: "Domain already exists"
     delete:
@@ -78,7 +78,7 @@ paths:
                         items: 
                           type: string
                           format: uuid
-                  - $ref: '#/components/schema/ReleatedResources'
+                  - $ref: '#/components/schemas/RelatedResources'
 
   /groups/{group_id}:
     parameters:
@@ -96,7 +96,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schema/ReleatedResources'
+                $ref: '#/components/schemas/RelatedResources'
     get:
       operationId: getGroup
       description: "Returns information about the group with the UUID given in the URI"
@@ -116,7 +116,7 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/Group'
                   - $ref: '#/components/schemas/TimeStamps'
-                  - $ref: '#/components/schema/ReleatedResources'
+                  - $ref: '#/components/schemas/RelatedResources'
     post:
       operationId: newGroup
       description: |
@@ -148,7 +148,7 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/Group'
                   - $ref: '#/components/schemas/TimeStamps'
-                  - $ref: '#/components/schema/ReleatedResources'
+                  - $ref: '#/components/schemas/RelatedResources'
 
 
   /groups/{group_id}/links/{link_name}:
@@ -170,7 +170,7 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/Link'
                   - $ref: '#/components/schemas/TimeStamps'
-                  - $ref: '#/components/schema/ReleatedResources'
+                  - $ref: '#/components/schemas/RelatedResources'
     delete:
       operationId: deleteLink
       description: |
@@ -183,7 +183,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schema/ReleatedResources'
+                $ref: '#/components/schemas/RelatedResources'
         '403':
           description: "forbidden to delete root group"
     put:
@@ -214,7 +214,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schema/ReleatedResources'
+                $ref: '#/components/schemas/RelatedResources'
 
 components:
   schemas:
@@ -350,6 +350,12 @@ components:
       schema:
         type: string
         format: url
+
+  securitySchemes:
+    name:
+      type: http
+      scheme: basic
+
 
 # https://data.hdfgroup.org:7258/?host=tall.test.data.hdfgroup.org
 # https://h5serv.readthedocs.io/en/latest/CommonErrorResponses.html
