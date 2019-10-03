@@ -7,31 +7,27 @@ tags:
     description: Metadata related requests
 paths:
   /:
+    parameters:
+      - $ref: '#/components/parameters/domainQuery'
+      - $ref: '#/components/parameters/domainHeader'
+      - $ref: '#/components/parameters/basicAuthHeader'
     get:
       operationId: getDomain
       description: "Retrieves information about the requested domain"
-      parameters:
-        - $ref: '#/components/parameters/domainQuery'
-        - $ref: '#/components/parameters/domainHeader'
-        - $ref: '#/components/parameters/basicAuthHeader'
       responses:
         '200':
           description: ok
           content:
             application/json:
               schema:
-                $ref: '#/components/schema/Domain'
-        # https://h5serv.readthedocs.io/en/latest/CommonErrorResponses.html
+                allOf:
+                  - $ref: '#/components/schemas/Domain'
+                  - $ref: '#/components/schemas/RelatedResources'
         '400':
           description: "The request was not structured correctly (e.g. a required key was missing)."
     put:
       operationId: newDomain
       description: "Creates a new domain. Initially the only domain is the root group."
-      parameters:
-        - $ref: '#/components/parameters/domainQuery'
-        - $ref: '#/components/parameters/domainHeader'
-        - $ref: '#/components/parameters/basicAuthHeader'
-
       responses:
         '200':
           description: "gets new domain"
@@ -44,10 +40,6 @@ paths:
     delete:
       operationId: deleteDomain
       description: "Deletes domain defined in query/header"
-      parameters:
-        - $ref: '#/components/parameters/domainQuery'
-        - $ref: '#/components/parameters/domainHeader'
-        - $ref: '#/components/parameters/basicAuthHeader'
       responses:
         '200':
           description: "domain deleted"
@@ -89,14 +81,15 @@ paths:
                   - $ref: '#/components/schema/ReleatedResources'
 
   /groups/{group_id}:
+    parameters:
+      - $ref: '#/components/parameters/groupId'
+      - $ref: '#/components/parameters/linkName'
+      - $ref: '#/components/parameters/domainQuery'
+      - $ref: '#/components/parameters/domainHeader'
+      - $ref: '#/components/parameters/basicAuthHeader'
     delete:
-      parameters:
-        - $ref: '#/components/parameters/groupId'
-        - $ref: '#/components/parameters/linkName'
-        - $ref: '#/components/parameters/domainQuery'
-        - $ref: '#/components/parameters/domainHeader'
-        - $ref: '#/components/parameters/basicAuthHeader'
-
+      operationId: deleteGroup
+      description: ""
       responses:
         '200':
           description: deleted
@@ -108,11 +101,6 @@ paths:
       operationId: getGroup
       description: "Returns information about the group with the UUID given in the URI"
       parameters:
-        - $ref: '#/components/parameters/groupId'
-        - $ref: '#/components/parameters/linkName'
-        - $ref: '#/components/parameters/domainQuery'
-        - $ref: '#/components/parameters/domainHeader'
-        - $ref: '#/components/parameters/basicAuthHeader'
         - in: query
           name: include_links
           description: "If this request parameter is provided, the links of the group are included in the response."
@@ -135,10 +123,6 @@ paths:
         Creates a new Group.
         *Note*: By default he new Group will not be linked from any other group in the domain. A link element can be included in the request body to have an existing group link to the new group. 
         Alternatively, use the PUT link operation to link the new group.
-      parameters:
-        - $ref: '#/components/parameters/domainQuery'
-        - $ref: '#/components/parameters/domainHeader'
-        - $ref: '#/components/parameters/basicAuthHeader'
       requestBody:
         content:
           application/json:
@@ -168,15 +152,15 @@ paths:
 
 
   /groups/{group_id}/links/{link_name}:
+    parameters:
+      - $ref: '#/components/parameters/groupId'
+      - $ref: '#/components/parameters/linkName'
+      - $ref: '#/components/parameters/domainQuery'
+      - $ref: '#/components/parameters/domainHeader'
+      - $ref: '#/components/parameters/basicAuthHeader'
     get:
       operationId: getLink
       description: "Returns information about a Link."
-      parameters:
-        - $ref: '#/components/parameters/groupId'
-        - $ref: '#/components/parameters/linkName'
-        - $ref: '#/components/parameters/domainQuery'
-        - $ref: '#/components/parameters/domainHeader'
-        - $ref: '#/components/parameters/basicAuthHeader'
       responses:
         '200':
           description: ok
@@ -193,13 +177,6 @@ paths:
         The implementation of the DELETE operation deletes the link named in the URI.
         Groups, datatypes, and datasets that are referenced by the link will not be deleted. To delete groups, datatypes or datasets, 
         use the appropriate DELETE operation for those objects.
-      parameters:
-        - $ref: '#/components/parameters/groupId'
-        - $ref: '#/components/parameters/linkName'
-        - $ref: '#/components/parameters/domainQuery'
-        - $ref: '#/components/parameters/domainHeader'
-        - $ref: '#/components/parameters/basicAuthHeader'
-
       responses:
         '200':
           description: "deleted and returns link in domain deleted"
@@ -209,7 +186,35 @@ paths:
                 $ref: '#/components/schema/ReleatedResources'
         '403':
           description: "forbidden to delete root group"
-
+    put:
+      operationId: newLink
+      description: |
+        Creates a new link in a given group.
+        Either hard, soft, or external links can be created based on the request elements. 
+        *Note*: any existing link with the same name will be replaced with the new link.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  description: "The UUID of the group the new group should be linked to. If the UUID is not valid, the request will fail and a new group will not be created. If this key is present, the h5path and h5domain keys will be ignored"
+                  type: string
+                  format: uuid
+                h5path:
+                  description: "A string describing a path to an external resource. If this key is present an soft or external link will be created."
+                  type: string
+                h5domain:
+                  description: "A string giving the external domain where the resource is present. If this key is present, the h5path key must be provided as well."
+                  type: string
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schema/ReleatedResources'
 
 components:
   schemas:
@@ -232,20 +237,18 @@ components:
                 type: string
 
     Domain:
-      allOf:
-        - type: object
-          properties:
-            root:
-              type: string
-              description: "The UUID of the root group of this domain"
-            created:
-              type: string
-              description: "A timestamp giving the time the domain was created in UTC (ISO-8601 format)"
-            lastModified:
-              type: string
-              description: "A timestamp giving the most recent time that any content in the domain has been modified in UTC (ISO-8601 format)."
-        - $ref: '#/components/schemas/RelatedResources'
-
+      type: object
+      properties:
+        root:
+          type: string
+          description: "The UUID of the root group of this domain"
+        created:
+          type: string
+          description: "A timestamp giving the time the domain was created in UTC (ISO-8601 format)"
+        lastModified:
+          type: string
+          description: "A timestamp giving the most recent time that any content in the domain has been modified in UTC (ISO-8601 format)."
+    
     Group:
       type: object
       properties:
@@ -298,7 +301,7 @@ components:
               type: string
               enum: ["groups", "datasets", "datetypes"]
             target:
-              description: "Some url TODO: got in example, not found in doc http://DOMAIN/groups/{id}????"
+              description: "info on this link TODO: got in example, not found in doc http://DOMAIN/groups/{id}????"
               type: string
               format: uri
             h5path:
@@ -349,5 +352,5 @@ components:
         format: url
 
 # https://data.hdfgroup.org:7258/?host=tall.test.data.hdfgroup.org
-
+# https://h5serv.readthedocs.io/en/latest/CommonErrorResponses.html
 
