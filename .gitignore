@@ -9,3 +9,5 @@ test/unit/*.db
 .idea
 *.iml
 
+.venv
+*.log
