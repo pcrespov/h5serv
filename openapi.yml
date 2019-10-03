@@ -2,15 +2,12 @@ openapi: 3.0.0
 info:
   title: "h5serv RESTful API"
   version: "1.0.0"
-tags:
-  - name: Metadata
-    description: Metadata related requests
+  description: "RESTful API for h5serv"
 paths:
   /:
     parameters:
       - $ref: '#/components/parameters/domainQuery'
       - $ref: '#/components/parameters/domainHeader'
-      - $ref: '#/components/parameters/basicAuthHeader'
     get:
       operationId: getDomain
       description: "Retrieves information about the requested domain"
@@ -51,7 +48,6 @@ paths:
       parameters:
         - $ref: '#/components/parameters/domainQuery'
         - $ref: '#/components/parameters/domainHeader'
-        - $ref: '#/components/parameters/basicAuthHeader'
         - in: query
           name: Limit
           description: "If provided, a positive integer value specifying the maximum number of UUID’s to return"
@@ -83,10 +79,9 @@ paths:
   /groups/{group_id}:
     parameters:
       - $ref: '#/components/parameters/groupId'
-      - $ref: '#/components/parameters/linkName'
       - $ref: '#/components/parameters/domainQuery'
       - $ref: '#/components/parameters/domainHeader'
-      - $ref: '#/components/parameters/basicAuthHeader'
+
     delete:
       operationId: deleteGroup
       description: ""
@@ -157,7 +152,7 @@ paths:
       - $ref: '#/components/parameters/linkName'
       - $ref: '#/components/parameters/domainQuery'
       - $ref: '#/components/parameters/domainHeader'
-      - $ref: '#/components/parameters/basicAuthHeader'
+
     get:
       operationId: getLink
       description: "Returns information about a Link."
@@ -312,14 +307,6 @@ components:
               type: string
 
   parameters:
-    basicAuthHeader:
-      in: header
-      name: Authentication
-      schema:
-        type: string
-        #TODO: format
-        #TODO: should this go into authetication section?
-        #TODO: Common headers https://h5serv.readthedocs.io/en/latest/CommonRequestHeaders.html      
     domainHeader:
       in: query
       description: "specifies domain if has DNS server"
@@ -352,11 +339,17 @@ components:
         format: url
 
   securitySchemes:
-    name:
+    BasicAuth:
       type: http
       scheme: basic
-
 
 # https://data.hdfgroup.org:7258/?host=tall.test.data.hdfgroup.org
 # https://h5serv.readthedocs.io/en/latest/CommonErrorResponses.html
 
+# Added by API Auto Mocking Plugin
+servers:
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/pcrespov/h5servRestApi/1.0
+
+security:
+  - BasicAuth: []
