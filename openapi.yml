@@ -126,31 +126,69 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - type: object
-                    properties:
-                      id:
-                        description: "UUID of requested group"
-                        type: string
-                        format: uuid
-                      attributeCount:
-                        description: "The number of attributes in the group"
-                        type: int
-                        minimum: 0
-                      linkCount:
-                        description: "Number of links in the group"
-                        type: int
-                        minimum: 0
-                      created:
-                        description: "A timestamp giving the time the group was created in UTC (ISO-8601 format)."
-                        type: string
-                      lastModified:
-                        description: "A timestamp giving the most recent time the group has been modified (i.e. attributes or links updated) in UTC (ISO-8601 format)."
-                        type: string
+                  - $ref: '#/components/schemas/Group'
+                  - $ref: '#/components/schemas/TimeStamps'
+                  - $ref: '#/components/schema/ReleatedResources'
+    post:
+      operationId: newGroup
+      description: |
+        Creates a new Group.
+        *Note*: By default he new Group will not be linked from any other group in the domain. A link element can be included in the request body to have an existing group link to the new group. 
+        Alternatively, use the PUT link operation to link the new group.
+      parameters:
+        - $ref: '#/components/parameters/domainQuery'
+        - $ref: '#/components/parameters/domainHeader'
+        - $ref: '#/components/parameters/basicAuthHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                link:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: "The UUID of the group the new group should be linked to. If the UUID is not valid, the request will fail and a new group will not be created."
+                      format: uuid
+                    name:
+                      type: string
+                      description: "The name of the new link."
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Group'
+                  - $ref: '#/components/schemas/TimeStamps'
                   - $ref: '#/components/schema/ReleatedResources'
 
 
   /groups/{group_id}/links/{link_name}:
+    get:
+      operationId: getLink
+      description: "Returns information about a Link."
+      parameters:
+        - $ref: '#/components/parameters/groupId'
+        - $ref: '#/components/parameters/linkName'
+        - $ref: '#/components/parameters/domainQuery'
+        - $ref: '#/components/parameters/domainHeader'
+        - $ref: '#/components/parameters/basicAuthHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Link'
+                  - $ref: '#/components/schemas/TimeStamps'
+                  - $ref: '#/components/schema/ReleatedResources'
     delete:
+      operationId: deleteLink
       description: |
         The implementation of the DELETE operation deletes the link named in the URI.
         Groups, datatypes, and datasets that are referenced by the link will not be deleted. To delete groups, datatypes or datasets, 
@@ -192,6 +230,7 @@ components:
               href:
                 description: link
                 type: string
+
     Domain:
       allOf:
         - type: object
@@ -206,6 +245,68 @@ components:
               type: string
               description: "A timestamp giving the most recent time that any content in the domain has been modified in UTC (ISO-8601 format)."
         - $ref: '#/components/schemas/RelatedResources'
+
+    Group:
+      type: object
+      properties:
+        id:
+          description: "UUID of requested group"
+          type: string
+          format: uuid
+        attributeCount:
+          description: "The number of attributes in the group"
+          type: integer
+          minimum: 0
+        linkCount:
+          description: "Number of links in the group"
+          type: integer
+          minimum: 0
+
+    TimeStamps:
+      type: object
+      properties:
+        created:
+          description: "A timestamp giving the time the group was created in UTC (ISO-8601 format)."
+          type: string
+        lastModified:
+          description: "A timestamp giving the most recent time the group has been modified (i.e. attributes or links updated) in UTC (ISO-8601 format)."
+          type: string
+
+    Link:
+      type: object
+      properties:
+        link:
+          type: object
+          properties:
+            class:
+              description: "type of link"
+              type: string
+              enum: ["H5L_TYPE_HARD", "H5L_TYPE_SOFT", "H5L_TYPE_EXTERNAL", "H5L_TYPE_UDLINK"]
+            title:
+              description: name of the link
+              type: string
+            href:
+              description: "url to this link"
+              type: string
+              format: url
+            id:
+              description: "For hard links, the uuid of the object the link points to. For symbolic links this element is not present"
+              type: string
+              format: uuid
+            collection:
+              description: "For hard links, the domain collection for which the object the link points to is a member of"
+              type: string
+              enum: ["groups", "datasets", "datetypes"]
+            target:
+              description: "Some url TODO: got in example, not found in doc http://DOMAIN/groups/{id}????"
+              type: string
+              format: uri
+            h5path:
+              description: "For soft or external links, path to the resouce"
+              type: string
+            h5domain:
+              description: "For external links, the path of the external domain containing the object that is linked. Note: The domain may or may not exist. Use GET / with the domain to verify."
+              type: string
 
   parameters:
     basicAuthHeader:
