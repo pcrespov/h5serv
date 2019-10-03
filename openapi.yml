@@ -12,6 +12,7 @@ paths:
       description: "Retrieves information about the requested domain"
       parameters:
         - $ref: '#/components/parameters/domainQuery'
+        - $ref: '#/components/parameters/domainHeader'
         - $ref: '#/components/parameters/basicAuthHeader'
       responses:
         '200':
@@ -28,8 +29,8 @@ paths:
       description: "Creates a new domain. Initially the only domain is the root group."
       parameters:
         - $ref: '#/components/parameters/domainQuery'
-        - $ref: '#/components/parameters/basicAuthHeader'
         - $ref: '#/components/parameters/domainHeader'
+        - $ref: '#/components/parameters/basicAuthHeader'
 
       responses:
         '200':
@@ -45,27 +46,138 @@ paths:
       description: "Deletes domain defined in query/header"
       parameters:
         - $ref: '#/components/parameters/domainQuery'
-        - $ref: '#/components/parameters/basicAuthHeader'
         - $ref: '#/components/parameters/domainHeader'
+        - $ref: '#/components/parameters/basicAuthHeader'
       responses:
         '200':
           description: "domain deleted"
 
+  /groups:
+    get:
+      operationId: getGroups
+      description: "Returns UUIDs for all the groups in a domain (other than the root group)."
+      parameters:
+        - $ref: '#/components/parameters/domainQuery'
+        - $ref: '#/components/parameters/domainHeader'
+        - $ref: '#/components/parameters/basicAuthHeader'
+        - in: query
+          name: Limit
+          description: "If provided, a positive integer value specifying the maximum number of UUID’s to return"
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: Marker
+          description: "If provided, a string value indicating that only UUID’s that occur after the marker value will be returned."
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      groups:
+                        type: array
+                        items: 
+                          type: string
+                          format: uuid
+                  - $ref: '#/components/schema/ReleatedResources'
+
+  /groups/{group_id}:
+    delete:
+      parameters:
+        - $ref: '#/components/parameters/groupId'
+        - $ref: '#/components/parameters/linkName'
+        - $ref: '#/components/parameters/domainQuery'
+        - $ref: '#/components/parameters/domainHeader'
+        - $ref: '#/components/parameters/basicAuthHeader'
+
+      responses:
+        '200':
+          description: deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schema/ReleatedResources'
+    get:
+      operationId: getGroup
+      description: "Returns information about the group with the UUID given in the URI"
+      parameters:
+        - $ref: '#/components/parameters/groupId'
+        - $ref: '#/components/parameters/linkName'
+        - $ref: '#/components/parameters/domainQuery'
+        - $ref: '#/components/parameters/domainHeader'
+        - $ref: '#/components/parameters/basicAuthHeader'
+        - in: query
+          name: include_links
+          description: "If this request parameter is provided, the links of the group are included in the response."
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      id:
+                        description: "UUID of requested group"
+                        type: string
+                        format: uuid
+                      attributeCount:
+                        description: "The number of attributes in the group"
+                        type: int
+                        minimum: 0
+                      linkCount:
+                        description: "Number of links in the group"
+                        type: int
+                        minimum: 0
+                      created:
+                        description: "A timestamp giving the time the group was created in UTC (ISO-8601 format)."
+                        type: string
+                      lastModified:
+                        description: "A timestamp giving the most recent time the group has been modified (i.e. attributes or links updated) in UTC (ISO-8601 format)."
+                        type: string
+                  - $ref: '#/components/schema/ReleatedResources'
+
+
+  /groups/{group_id}/links/{link_name}:
+    delete:
+      description: |
+        The implementation of the DELETE operation deletes the link named in the URI.
+        Groups, datatypes, and datasets that are referenced by the link will not be deleted. To delete groups, datatypes or datasets, 
+        use the appropriate DELETE operation for those objects.
+      parameters:
+        - $ref: '#/components/parameters/groupId'
+        - $ref: '#/components/parameters/linkName'
+        - $ref: '#/components/parameters/domainQuery'
+        - $ref: '#/components/parameters/domainHeader'
+        - $ref: '#/components/parameters/basicAuthHeader'
+
+      responses:
+        '200':
+          description: "deleted and returns link in domain deleted"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schema/ReleatedResources'
+        '403':
+          description: "forbidden to delete root group"
+
 
 components:
   schemas:
-    Domain:
+    RelatedResources:
       type: object
       properties:
-        root:
-          type: string
-          description: "The UUID of the root group of this domain"
-        created:
-          type: string
-          description: "A timestamp giving the time the domain was created in UTC (ISO-8601 format)"
-        lastModified:
-          type: string
-          description: "A timestamp giving the most recent time that any content in the domain has been modified in UTC (ISO-8601 format)."
         hrefs:
           description: "List to related resources"
           # https://h5serv.readthedocs.io/en/latest/Hypermedia.html
@@ -80,7 +192,20 @@ components:
               href:
                 description: link
                 type: string
-    
+    Domain:
+      allOf:
+        - type: object
+          properties:
+            root:
+              type: string
+              description: "The UUID of the root group of this domain"
+            created:
+              type: string
+              description: "A timestamp giving the time the domain was created in UTC (ISO-8601 format)"
+            lastModified:
+              type: string
+              description: "A timestamp giving the most recent time that any content in the domain has been modified in UTC (ISO-8601 format)."
+        - $ref: '#/components/schemas/RelatedResources'
 
   parameters:
     basicAuthHeader:
@@ -105,7 +230,22 @@ components:
       schema:
         type: string
         #TODO: format ?host=tall.public.data.hdfgroup.org
-  
+    groupId:
+      in: path
+      name: group_id
+      description: "UUID of the group"
+      required: true
+      schema:
+        type: string
+        format: uuid
+    linkName:
+      in: path
+      name: link_name
+      description: "URL_encoded name of the link"
+      required: true
+      schema:
+        type: string
+        format: url
 
 # https://data.hdfgroup.org:7258/?host=tall.test.data.hdfgroup.org
 
