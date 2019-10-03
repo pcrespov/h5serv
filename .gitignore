@@ -4,10 +4,16 @@ data/*.h5
 data/*.db
 test/unit/*.h5
 test/unit/*.db
+util/admin/*.h5
 
 # jetbrains IDE stuff
 .idea
 *.iml
+.vscode
 
 .venv
 *.log
+*.log.*
+
+# python
+*.egg-info

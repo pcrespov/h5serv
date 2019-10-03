@@ -1,0 +1,112 @@
+openapi: 3.0.0
+info:
+  title: "h5serv RESTful API"
+  version: "1.0.0"
+tags:
+  - name: Metadata
+    description: Metadata related requests
+paths:
+  /:
+    get:
+      operationId: getDomain
+      description: "Retrieves information about the requested domain"
+      parameters:
+        - $ref: '#/components/parameters/domainQuery'
+        - $ref: '#/components/parameters/basicAuthHeader'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schema/Domain'
+        # https://h5serv.readthedocs.io/en/latest/CommonErrorResponses.html
+        '400':
+          description: "The request was not structured correctly (e.g. a required key was missing)."
+    put:
+      operationId: newDomain
+      description: "Creates a new domain. Initially the only domain is the root group."
+      parameters:
+        - $ref: '#/components/parameters/domainQuery'
+        - $ref: '#/components/parameters/basicAuthHeader'
+        - $ref: '#/components/parameters/domainHeader'
+
+      responses:
+        '200':
+          description: "gets new domain"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schema/Domain'
+        '409':
+          description: "Domain already exists"
+    delete:
+      operationId: deleteDomain
+      description: "Deletes domain defined in query/header"
+      parameters:
+        - $ref: '#/components/parameters/domainQuery'
+        - $ref: '#/components/parameters/basicAuthHeader'
+        - $ref: '#/components/parameters/domainHeader'
+      responses:
+        '200':
+          description: "domain deleted"
+
+
+components:
+  schemas:
+    Domain:
+      type: object
+      properties:
+        root:
+          type: string
+          description: "The UUID of the root group of this domain"
+        created:
+          type: string
+          description: "A timestamp giving the time the domain was created in UTC (ISO-8601 format)"
+        lastModified:
+          type: string
+          description: "A timestamp giving the most recent time that any content in the domain has been modified in UTC (ISO-8601 format)."
+        hrefs:
+          description: "List to related resources"
+          # https://h5serv.readthedocs.io/en/latest/Hypermedia.html
+          type: array
+          items:
+            type: object
+            properties:
+              rel:
+                description: type of relation
+                type: string
+                enum: [attributes ,data ,database ,groupbase ,home ,owner ,root ,self, typebase]
+              href:
+                description: link
+                type: string
+    
+
+  parameters:
+    basicAuthHeader:
+      in: header
+      name: Authentication
+      schema:
+        type: string
+        #TODO: format
+        #TODO: should this go into authetication section?
+        #TODO: Common headers https://h5serv.readthedocs.io/en/latest/CommonRequestHeaders.html      
+    domainHeader:
+      in: query
+      description: "specifies domain if has DNS server"
+      name: host
+      schema:
+        type: string
+        #TODO: format tall.public.data.hdfgroup.org
+    domainQuery:
+      in: query
+      description: "specifies domain if DNS server is not setup"
+      name: host
+      schema:
+        type: string
+        #TODO: format ?host=tall.public.data.hdfgroup.org
+  
+
+# https://data.hdfgroup.org:7258/?host=tall.test.data.hdfgroup.org
+
+
