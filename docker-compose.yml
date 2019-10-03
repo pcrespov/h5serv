@@ -1,0 +1,20 @@
+version: "3.7"
+services:
+  
+  h5serv:
+    image: ${DOCKER_REGISTRY:-local}/h5serv:${DOCKER_TAG:-latest}
+    build:
+      context: .
+    volumes:
+      - ./data:/data
+    ports:
+      - 5000:5000
+
+  ds-notebook:
+    image: jupyter/datascience-notebook
+    ports:
+      - 10000:8888
+    environment: 
+      - JUPYTER_ENABLE_LAB=yes
+    volumes: 
+      - .:/home/jovyan/work
